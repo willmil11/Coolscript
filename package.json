@@ -34,5 +34,8 @@
   "bugs": {
     "url": "https://github.com/willmil11/Coolscript/issues"
   },
-  "homepage": "https://github.com/willmil11/Coolscript#readme"
+  "homepage": "https://github.com/willmil11/Coolscript#readme",
+  "dependencies": {
+    "easynodes": "^1.0.1"
+  }
 }
