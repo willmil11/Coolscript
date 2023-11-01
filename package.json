@@ -1,0 +1,38 @@
+{
+  "name": "coolscript",
+  "version": "1.0.0",
+  "description": "Coolscript is a easy and lightning quick interpreted programing language.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/willmil11/Coolscript.git"
+  },
+  "keywords": [
+    "coolscript",
+    "cool",
+    "script",
+    "interpreted",
+    "scripted",
+    "programing",
+    "language",
+    "lang",
+    "program",
+    "custom",
+    "interpreter",
+    "interpret",
+    "node",
+    "js",
+    "javascript",
+    "node.js",
+    "node.javascript"
+  ],
+  "author": "willmil11",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/willmil11/Coolscript/issues"
+  },
+  "homepage": "https://github.com/willmil11/Coolscript#readme"
+}
