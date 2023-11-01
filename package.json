@@ -37,5 +37,8 @@
   "homepage": "https://github.com/willmil11/Coolscript#readme",
   "dependencies": {
     "easynodes": "^1.0.1"
+  },
+  "bin": {
+    "coolscript": "app.js"
   }
 }
