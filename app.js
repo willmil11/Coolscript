@@ -121,12 +121,21 @@ var app = async function () {
 
     var interpreter = {
         "interpretLine": function (data, scope) {
-            //Interpret data with scope variables and parents scopes variables and only if scope is reached
-            //if ...: <-- Scope global
-            //   ... <-- Sub-scope (executed if the if is true)
-            //If scope is a conditional scope it's variables are not local to itself
+            //Check if line is empty
+            if (data.trim() === "") {
+                return;
+            }
 
-            console.log(this.dynamicprocessor(data, scope));
+            //Check if line is a comment
+            if (data.trim().startsWith("//")) {
+                return;
+            }
+
+            var keywords = ["var", "if", "else", "while", "for", "function", "return", "break", "continue"];
+            if (!(keywords.includes(data.trim().split(" ")[0]))) {
+                interpreter.dynamicprocessor(data, scope);
+                return;
+            }
         },
         "dynamicprocessor": function (data, scope) {
             // Get variables of current and parents scopes
@@ -143,7 +152,7 @@ var app = async function () {
                     "values": []
                 }
 
-                function gatherVariablesFromScope(scope) {
+                var gatherVariablesFromScope = function (scope) {
                     variables.names = variables.names.concat(scope.vars.names);
                     variables.values = variables.values.concat(scope.vars.values);
 
@@ -154,8 +163,10 @@ var app = async function () {
                     }
 
                     // Gather variables from subscopes
-                    for (var i = 0; i < scope.subscopes.length; i++) {
+                    var i = 0;
+                    while (i < scope.subscopes.length) {
                         gatherVariablesFromScope(scope.subscopes[i]);
+                        i += 1;
                     }
                 }
 
@@ -170,40 +181,142 @@ var app = async function () {
             // Now, 'variables' contains the names and values of variables from the current scope and its parent scopes.
 
             //Replace variables names that are not in double quotes by their values
+            var ok = false;
             var index = 0;
             while (index < variables.names.length) {
+                var indextmp = index
                 var regex = new RegExp('\\b' + variables.names[index] + '\\b', 'g');
-                data = data.replace(regex, function (match, offset, str) {
+                data = data.replace(regex, function (match, offset, str, index=indextmp) {
                     var prevChar = str.charAt(offset - 1);
                     var nextChar = str.charAt(offset + match.length);
-                    if ((prevChar !== '"' && nextChar !== '"') && (prevChar !== "'" && nextChar !== "'")) {
+                    if ((prevChar !== "\"" && nextChar !== "\"") && (prevChar !== "'" && nextChar !== "'")) {
                         var value = variables.values[index].data;
-                        if (variables.values[index].type === 'string') {
-                            return '"' + value + '"';
-                        } else if (variables.values[index].type === 'number') {
-                            return value;
-                        } else if (variables.values[index].type === 'boolean') {
-                            return value ? 'true' : 'false';
-                        } else {
-                            // Handle other types as needed
-                            return '[' + variables.values[index].type + ']';
+                        if (variables.values[index].type === "string") {
+                            return "\"" + value + "\"";
                         }
-                    } else {
+                        else {
+                            if (variables.values[index].type === "number") {
+                                return value;
+                            }
+                            else {
+                                if (variables.values[index].type === "boolean") {
+                                    return value ? "true" : "false";
+                                }
+                                else {
+                                    if (variables.values[index].type === "function") {
+                                        var nextChar = str.charAt(offset + match.length);
+                                    
+                                        // Check if there is a space after function or a "("
+                                        while (nextChar === " ") {
+                                            offset += 1;
+                                            nextChar = str.charAt(offset + match.length);
+                                        }
+                                    
+                                        // Check if next char is not a "("
+                                        if (nextChar !== "(") {
+                                            return "\"[Function]\"";
+                                        } 
+                                        else {
+                                            ok = true;
+                                            // Remove the "("
+										    //ofset doesn't include the "("
+										    str = str.slice(0, offset + match.length) + str.slice(offset + match.length + 1);
+										    offset -= 1;
+										    nextChar = str.charAt(offset);
+								            
+                                            // Loop until the next , or ")"
+                                            var args = [];
+                                            var index = 0;
+                                            var inQuotes = false; // flag to check if we are inside quotes
+
+                                            while (nextChar !== ")") {
+                                                var arg = "";
+
+                                                // Loop until the next , or ")"
+                                                while ((nextChar !== "," && nextChar !== ")") || inQuotes) {
+                                                    arg += nextChar;
+                                                    offset += 1;
+                                                    nextChar = str.charAt(offset + match.length);
+
+                                                    // check if we are inside quotes
+                                                    if (nextChar === "\"") {
+                                                        inQuotes = !inQuotes;
+                                                    }
+
+                                                    //If we did all chars function isn't closed throw an error
+                                                    if (nextChar === "") {
+                                                        console.log("[Coolscript] [Interpreter] Unable to process dynamic data.");
+                                                        console.log("[Coolscript] [Interpreter] Error in dynamic data: Function not closed.");
+                                                        process.exit(1)
+                                                    }
+                                                }
+
+                                                args[index] = arg;
+                                                index += 1;
+
+                                                // If the next char is a ",", skip it
+                                                if (nextChar === "," && !inQuotes) {
+                                                    offset += 1;
+                                                    nextChar = str.charAt(offset + match.length);
+                                                }
+                                            }
+                                    
+                                            // At this point, 'args' array contains the arguments passed to the function
+                                    
+                                            // Now, you can use 'args' to process the function call
+                                    
+                                            // For example, you can use dynamicprocessor on each argument, and then execute the function with the processed arguments
+										    //If there are no arguments
+										    if (args.length === 1 && args[0] === "") {
+												var processedArgs = [];
+										    }
+										    else{
+												var processedArgs = args.map(function(arg) {
+												    arg = arg.trim();
+                                                    return interpreter.dynamicprocessor(arg, scope);
+                                                });
+										    
+										        var processedArgsTmp = [];
+										        var index = 0;
+								                while (index < processedArgs.length) {
+										            processedArgsTmp.push(processedArgs[index]);
+				    								index += 1;
+					    					    }
+						    				    processedArgs = processedArgsTmp;
+							    	            processedArgsTmp = null;
+											}
+                                            
+                                            //Run the function
+                                            var result = interpreter.runfunction(variables.values[indextmp].data, scope, variables.values[indextmp].functype, processedArgs);
+                                            return "\"" + result + "\"";
+                                        }
+                                    }                                    
+                                    else{
+                                        return "\"[" + variables.values[index].type + "]\"";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else {
                         return match; // Variable name is within quotes, so no replacement
                     }
                 });
                 index += 1;
             }
+            if (ok){
+                return;
+            }
             var result;
-            try{
+            try {
                 result = dynamicprocessor.parse(data);
             }
-            catch (error){
+            catch (error) {
                 console.log("[Coolscript] [Interpreter] Unable to process dynamic data.");
                 console.log("[Coolscript] [Interpreter] Error in dynamic data: " + error);
                 process.exit(1)
             }
-            if (!(result === result)){
+            if (!(result === result)) {
                 //NaN because NaN is the only value that is not equal to itself
                 console.log("[Coolscript] [Interpreter] Unable to process dynamic data.");
                 console.log("[Coolscript] [Interpreter] Error in dynamic data: Unauthorized operation.");
@@ -211,15 +324,77 @@ var app = async function () {
             }
             return result;
         },
+        "runfunction": function (data, scope, functype, processedArgs) {
+            //Create a scope in the scope for the function and set scope to that new scope
+            var randomFuncId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            var newScope = {
+                "id": "function_" + randomFuncId,
+                "conditional": false,
+                "vars": {
+                    "names": [],
+                    "values": []
+                },
+                "subscopes": []
+            }
+            scope.subscopes.push(newScope);
+            scope = newScope;
+            var lines = data.split("\n");
+            var args = lines[0].slice(0, -1).slice("function(".length).slice(0, -1).split(",");
+            var argstmp = [];
+            var index = 0;
+            while (index < args.length) {
+                argstmp.push(args[index].trim());
+                index += 1;
+            }
+            args = argstmp;
+            argstmp = null;
+            var body = lines.slice(1, -1)
+            if (functype === "native") {
+                var code = "";
+                //Define all arguments as variables
+                var index = 0;
+                while (index < args.length) {
+                    code += "var " + args[index] + " = \"" + processedArgs[index] + "\";\n";
+                    index += 1;
+                }
+                //Add body
+                var index = 0;
+                while (index < body.length) {
+                    code += body[index] + "\n";
+                    index += 1;
+                }
+                eval(code);
+                return;
+            }
+            var result;
+            var index = 0;
+            while (index < body.length) {
+                result = this.interpretLine(body[index], scope);
+                if (result){
+                    //Hit a return statement
+                    return result;
+                }
+                index += 1;
+            }
+            if (result == null){
+                return {
+                    "type": "null",
+                    "data": "null"
+                }
+            }
+        },
         "scopes": {
             "global": {
                 "id": "global",
                 "conditional": false,
                 "vars": {
-                    "names": ["stuff"],
+                    "names": ["log"],
                     "values": [{
-                        "type": "string",
-                        "data": "Hello world!"
+                        "type": "function",
+                        "functype": "native",
+                        "data": `function(tolog){
+                            console.log(tolog)
+                        }`
                     }]
                 },
                 "subscopes": []
