@@ -1,1 +1,2 @@
-log("Hello, World!", "info")
+var stuff = "some stuff"
+log(stuff)

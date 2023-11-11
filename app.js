@@ -136,6 +136,24 @@ var app = async function () {
                 interpreter.dynamicprocessor(data, scope);
                 return;
             }
+            else{
+                //If is var
+                if (data.trim().startsWith("var ")) {
+                    //Variable could be defined as var name = value or var name=value or var name =value or var name= value
+                    //Get name and value
+                    var name = data.trim().split(" ")[1].split("=")[0];
+                    var value = data.trim().split("=")[1].trim();
+                    //dynamicprocessor value
+                    value = interpreter.dynamicprocessor(value, scope);
+                    //Add variable to scope
+                    scope.vars.names.push(name);
+                    scope.vars.values.push({
+                        "type": "string",
+                        "data": value
+                    });
+                    return;
+                }
+            }
         },
         "dynamicprocessor": function (data, scope) {
             // Get variables of current and parents scopes
