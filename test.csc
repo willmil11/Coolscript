@@ -1,2 +1,2 @@
-var stuff = "some stuff"
-log(stuff)
+var stuff = 1
+log(stuff + 1)

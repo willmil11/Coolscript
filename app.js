@@ -148,7 +148,7 @@ var app = async function () {
                     //Add variable to scope
                     scope.vars.names.push(name);
                     scope.vars.values.push({
-                        "type": "string",
+                        "type": isNaN(value) ? "string" : "number",
                         "data": value
                     });
                     return;
