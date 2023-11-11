@@ -21,13 +21,13 @@ Term
 Factor
   = "(" _ expr:Expression _ ")" { return expr; }
   / str:String { return str; }
-  / int:Integer { return int; }
+  / num:Number { return num; }
 
 String "string"
   = "\"" content:$(!"\"" .)* "\"" { return content; }
 
-Integer "integer"
-  = _ [0-9]+ { return parseInt(text(), 10); }
+Number "number"
+  = _ [0-9]+ ("." [0-9]+)? { return parseFloat(text()); }
 
 _ "whitespace"
   = [ \t\n\r]*
