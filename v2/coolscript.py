@@ -13,6 +13,7 @@ import os
 from sys import exit
 from sys import argv as args
 import sys
+import os
 #Patch some imports
 def time():
     return rtime() * 1000
@@ -21,6 +22,24 @@ def sleep(ms):
     return None
 def perf_counter():
     return rperf_counter() * 1000
+#Create console function
+def clear():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-#Check args
-#TODO: DO THAT
+#Messages
+version = "0.0.1"
+
+class messages:
+    def help():
+        print("----- Coolscript Help -----")
+        print(" coolscript --help - Shows this message")
+        print("            <file> - Runs the file")
+        print("            --version - Shows the version")
+        print("            <nothing> If there are no args it will open live interpreter.")
+        print("            --live - Opens live interpreter.")
+        print("---------------------------")
+    def version():
+        print("v" + version)
+
+#If arg is --help
+#TODO: Do that.
