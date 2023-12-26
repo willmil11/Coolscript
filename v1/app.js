@@ -169,32 +169,41 @@ var app = async function () {
                     "names": [],
                     "values": []
                 }
-
+            
                 var gatherVariablesFromScope = function (scope) {
                     variables.names = variables.names.concat(scope.vars.names);
                     variables.values = variables.values.concat(scope.vars.values);
-
+            
+                    // Gather variables from conditional scope
                     if (scope.conditional) {
-                        // Gather variables from conditional scope
                         variables.names = variables.names.concat(analyzescope(scope).names);
                         variables.values = variables.values.concat(analyzescope(scope).values);
                     }
-
-                    // Gather variables from subscopes
-                    var i = 0;
-                    while (i < scope.subscopes.length) {
-                        gatherVariablesFromScope(scope.subscopes[i]);
-                        i += 1;
+            
+                    // Gather variables from parent scopes
+                    var parentScope = scope;
+                    while (parentScope.parentid) {
+                        parentScope = interpreter.scopes[parentScope.parentid];
+                        gatherVariablesFromScope(parentScope);
+                    }
+            
+                    // Gather variables from subscopes (excluding non-conditional ones)
+                    var index = 0;
+                    while (index < scope.subscopes.length) {
+                        if (scope.subscopes[index].conditional) {
+                            gatherVariablesFromScope(scope.subscopes[index]);
+                        }
+                        index += 1;
                     }
                 }
-
+            
                 gatherVariablesFromScope(scope);
-
+            
                 return variables;
             }
-
-            variables.names = variables.names.concat(analyzescope(scope).names);
-            variables.values = variables.values.concat(analyzescope(scope).values);
+            
+            // Assuming 'interpreter' is your interpreter object
+            variables = analyzescope(currentscope);            
 
             // Now, 'variables' contains the names and values of variables from the current scope and its parent scopes.
 
@@ -310,7 +319,22 @@ var app = async function () {
                                         }
                                     }                                    
                                     else{
-                                        return "\"[" + variables.values[index].type + "]\"";
+                                        if (variables.values[index].type === "object") {
+                                            //If there is a dot
+                                            //Go get the requested key then check what to do with the value: if it's trying to execute a function at the key do it if its a dot repeat the process etc you get it
+                                            var nextChar = str.charAt(offset + match.length);
+                                            var key = "";
+                                            while (nextChar !== ".") {
+                                                key += nextChar;
+                                                offset += 1;
+                                                nextChar = str.charAt(offset + match.length);
+                                            }
+                                            var key = key.trim();
+                                            //TODO: continue objects implementation
+                                        }
+                                        else{
+                                            return "\"[" + variables.values[index].type + "]\"";
+                                        }
                                     }
                                 }
                             }
@@ -347,6 +371,7 @@ var app = async function () {
             var randomFuncId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             var newScope = {
                 "id": "function_" + randomFuncId,
+                "parentid": scope.id,
                 "conditional": false,
                 "vars": {
                     "names": [],
@@ -406,13 +431,25 @@ var app = async function () {
                 "id": "global",
                 "conditional": false,
                 "vars": {
-                    "names": ["log"],
+                    "names": ["log", "obj"],
                     "values": [{
                         "type": "function",
                         "functype": "native",
                         "data": `function(tolog){
                             console.log(tolog)
                         }`
+                    },
+                    {
+                        "type": "object",
+                        "data": {
+                            "keys": {
+                                "keynames": [],
+                                "keyvalues": [{
+                                    "type": "string",
+                                    "data": "value"
+                                }]
+                            }
+                        }
                     }]
                 },
                 "subscopes": []
