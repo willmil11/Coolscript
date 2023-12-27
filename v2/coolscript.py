@@ -10,6 +10,7 @@ from time import perf_counter_ns
 import threading
 from os import path
 import os
+from dynamicprocessor import *
 from sys import exit
 from sys import argv as args
 import sys
@@ -41,5 +42,22 @@ class messages:
     def version():
         print("v" + version)
 
+class Interpreter:
+    def dynamic_processor(self, string):
+        returns = None
+        try:
+            returns = dynamicprocessor.processor.parse(string)
+        except Exception as e:
+            raise Exception("Error while resolving dynamic data: " + str(e))
+        return returns
+    
+coolscript = Interpreter()
+
 #If arg is --help
-#TODO: Do that.
+if args[1] == "--help":                                                                                     
+    messages.help()
+    exit(0)
+else:
+    if args[1] == "--version":
+        messages.version()
+        exit(0)
